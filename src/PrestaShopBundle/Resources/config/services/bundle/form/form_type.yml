@@ -677,3 +677,9 @@ services:
   PrestaShopBundle\Form\Admin\Improve\Design\ImageSettings\DeleteImageTypeType: ~
   PrestaShopBundle\Form\Admin\Improve\Design\ImageSettings\ImageSettingsType: ~
   PrestaShopBundle\Form\Admin\Improve\Design\ImageSettings\RegenerateThumbnailsType: ~
+
+  PrestaShopBundle\Form\Admin\Type\CarrierRangesCostsType:
+    public: false
+    autowire: true
+    arguments:
+      $zonesChoiceProvider: '@prestashop.core.form.choice_provider.zone_by_id'

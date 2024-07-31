@@ -75,6 +75,7 @@ import SubmitGridActionExtension from '@components/grid/extension/submit-grid-ac
 import SubmitRowActionExtension from '@components/grid/extension/action/row/submit-row-action-extension';
 import FormFieldToggler from '@components/form/form-field-toggler';
 import EmailInput from '@components/email-input';
+import CarrierRangesCosts from '@js/components/form/carrier-ranges-costs';
 
 const GridExtensions = {
   AjaxBulkActionExtension,
@@ -167,6 +168,7 @@ const initPrestashopComponents = (): void => {
     EntitySearchInput,
     EmailInput,
     CarrierRanges,
+    CarrierRangesCosts,
     MultipleZoneChoice,
   };
 };

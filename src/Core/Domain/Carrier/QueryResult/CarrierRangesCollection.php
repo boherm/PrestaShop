@@ -76,4 +76,42 @@ class CarrierRangesCollection
     {
         return $this->zones;
     }
+
+    /**
+     * @return int[]
+     */
+    public function getZonesIds(): array
+    {
+        return array_map(
+            function (CarrierRangeZone $zone) {
+                return $zone->getZoneId();
+            },
+            $this->zones
+        );
+    }
+
+    /**
+     * @return array<>
+     */
+    public function getRangesBounderies(): array
+    {
+        $ranges = [];
+
+        // We need to get all ranges from all zones.
+        foreach ($this->zones as $zone) {
+            foreach ($zone->getRanges() as $range) {
+                $ranges[] = [
+                    'from' => $range->getFrom()->__toString(),
+                    'to' => $range->getTo()->__toString(),
+                ];
+            }
+        }
+
+        // Then, we remove duplicates and sort ranges by from value.
+        $ranges = array_unique($ranges, SORT_REGULAR);
+        $from_values = array_column($ranges, 'from');
+        array_multisort($from_values, SORT_ASC, $ranges);
+
+        return $ranges;
+    }
 }

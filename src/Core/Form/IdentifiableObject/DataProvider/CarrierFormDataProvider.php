@@ -29,6 +29,8 @@ namespace PrestaShop\PrestaShop\Core\Form\IdentifiableObject\DataProvider;
 use PrestaShop\PrestaShop\Core\CommandBus\CommandBusInterface;
 use PrestaShop\PrestaShop\Core\Context\ShopContext;
 use PrestaShop\PrestaShop\Core\Domain\Carrier\Query\GetCarrierForEditing;
+use PrestaShop\PrestaShop\Core\Domain\Carrier\Query\GetCarrierRanges;
+use PrestaShop\PrestaShop\Core\Domain\Carrier\QueryResult\CarrierRangesCollection;
 use PrestaShop\PrestaShop\Core\Domain\Carrier\QueryResult\EditableCarrier;
 use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopConstraint;
 
@@ -44,6 +46,7 @@ class CarrierFormDataProvider implements FormDataProviderInterface
     {
         /** @var EditableCarrier $carrier */
         $carrier = $this->queryBus->handle(new GetCarrierForEditing((int) $id, ShopConstraint::allShops()));
+        $carrierRanges = $this->queryBus->handle(new GetCarrierRanges((int) $id, ShopConstraint::allShops()));
 
         return [
             'general_settings' => [
@@ -62,6 +65,9 @@ class CarrierFormDataProvider implements FormDataProviderInterface
                 'shipping_method' => $carrier->getShippingMethod(),
                 'id_tax_rule_group' => $carrier->getIdTaxRuleGroup(),
                 'range_behavior' => $carrier->getRangeBehavior(),
+                'zones' => $carrierRanges->getZonesIds(),
+                'ranges' => $this->formatRangesData($carrierRanges),
+                'ranges_costs' => $this->formatPricesByZones($carrierRanges),
             ],
             'size_weight_settings' => [
                 'max_width' => $carrier->getMaxWidth(),
@@ -80,5 +86,73 @@ class CarrierFormDataProvider implements FormDataProviderInterface
                 'associated_shops' => $this->shopContext->getAssociatedShopIds(),
             ],
         ];
+    }
+
+    /**
+     * Function to format ranges data.
+     *
+     * @param CarrierRangesCollection $carrierRangesCollection
+     *
+     * @return array
+     */
+    private function formatRangesData(CarrierRangesCollection $carrierRangesCollection): array
+    {
+        $ranges = [];
+
+        // For each zones, we need to get all ranges
+        foreach ($carrierRangesCollection->getZones() as $zone) {
+            foreach ($zone->getRanges() as $range) {
+                $ranges[] = [
+                    'from' => $range->getFrom()->__toString(),
+                    'to' => $range->getTo()->__toString(),
+                ];
+            }
+        }
+
+        // Then, we remove duplicates and sort ranges by from value.
+        $ranges = array_unique($ranges, SORT_REGULAR);
+        $from_values = array_column($ranges, 'from');
+        array_multisort($from_values, SORT_ASC, $ranges);
+
+        return ['data' => json_encode($ranges)];
+    }
+
+    /**
+     * Function to format prices by zones and ranges.
+     *
+     * @param CarrierRangesCollection $carrierRangesCollection
+     *
+     * @return array
+     */
+    private function formatPricesByZones(CarrierRangesCollection $carrierRangesCollection): array
+    {
+        $zonesPrices = [];
+
+        // For each zones, we need to get all ranges with their prices.
+        foreach ($carrierRangesCollection->getZones() as $zone) {
+            $zoneId = $zone->getZoneId();
+            $zonePrices = [ 'zoneId' => $zoneId, 'ranges' => [] ];
+
+            foreach ($zone->getRanges() as $range) {
+                $zonePrices['ranges'][] = [
+                    'from' => $range->getFrom()->__toString(),
+                    'to' => $range->getTo()->__toString(),
+                    'price' => $range->getPrice()->__toString(),
+                ];
+            }
+
+            // Then, we sort ranges by from value.
+            $from_values = array_column($zonePrices['ranges'], 'from');
+            array_multisort($from_values, SORT_ASC, $zonePrices['ranges']);
+
+            // And we add the current prices to the global zones prices array.
+            $zonesPrices[] = $zonePrices;
+        }
+
+        // Finally, we sort by zone id.
+        $id_values = array_column($zonesPrices, 'zoneId');
+        array_multisort($id_values, SORT_ASC, $zonesPrices);
+
+        return ['data' => json_encode($zonesPrices)];
     }
 }

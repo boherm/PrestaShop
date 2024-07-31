@@ -26,53 +26,47 @@
 import ComponentsMap from '@components/components-map';
 import {createApp} from 'vue';
 import {createI18n} from 'vue-i18n';
-import CarrierRangesModal from '@pages/carrier/form/components/CarrierRangesModal.vue';
+import CarrierRangesCostsComponent from '@pages/carrier/form/components/CarrierRangesCosts.vue';
 import EventEmitter from '@components/event-emitter';
 import ReplaceFormatter from '@PSVue/plugins/vue-i18n/replace-formatter';
 import CarrierFormEventMap from '@pages/carrier/form/carrier-form-event-map';
 
-export default class CarrierRanges {
+export default class CarrierRangesCosts {
   private readonly eventEmitter: typeof EventEmitter;
 
   constructor() {
     this.eventEmitter = window.prestashop.instance.eventEmitter;
-    this.initRangesSelectionModal();
+    this.initRangesCosts();
   }
 
-  initRangesSelectionModal(): void {
-    // Create the modal container
-    const $showModal = $(ComponentsMap.carrierRanges.addRangeButton);
-    const $modalContainer = $('<div id="' + ComponentsMap.carrierRanges.rangesSelectionAppId + '"></div>');
-    $showModal.after($modalContainer);
+  initRangesCosts(): void {
+    // Retrieve the main container
+    const $container = <HTMLElement>document.getElementById(ComponentsMap.carrierRanges.rangesCostsMainContainerId);
+    const $data = <HTMLFormElement>document.getElementById(ComponentsMap.carrierRanges.rangesCostsDataId);
 
-    // Retreive translations from the button
+    // Create the app container
+    const $appContainer = <HTMLElement>document.createElement('div');
+    $appContainer.setAttribute('id', ComponentsMap.carrierRanges.rangesCostsAppContainerId);
+    $container.appendChild($appContainer);
+
+    // Retreive zones and translations from the container
+    const zonesData = JSON.parse($container.dataset.zones || '{}');
     const i18n = createI18n({
       locale: 'en',
       formatter: new ReplaceFormatter(),
-      messages: {en: $showModal.data('translations')},
+      messages: {en: JSON.parse($container.dataset.translations || '{}')},
     });
 
     // Initialize the Vue app with the CarrierRangesModal component
-    const vueApp = createApp(CarrierRangesModal, {
+    const vueApp = createApp(CarrierRangesCostsComponent, {
       i18n,
       eventEmitter: this.eventEmitter,
+      zonesData,
+      currencySymbol: $container.dataset.currency || '',
+      zonesPrices: JSON.parse($data.value || '{}'),
     }).use(i18n);
 
-    // Mount the Vue app to the modal container
-    vueApp.mount('#' + ComponentsMap.carrierRanges.rangesSelectionAppId);
-
-    // Open the modal with data when the button "Add range" is clicked
-    $showModal.click((e: JQuery.ClickEvent) => {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      const data = $('#' + ComponentsMap.carrierRanges.rangesSelectionDataId).val() || '{}';
-      this.eventEmitter.emit(CarrierFormEventMap.openRangeSelectionModal, JSON.parse(data.toString()));
-    });
-
-    // Listen the modal to apply the ranges selected to the data
-    this.eventEmitter.on(CarrierFormEventMap.rangesUpdated, (ranges: Array<object>) => {
-      const $data = $('#' + ComponentsMap.carrierRanges.rangesSelectionDataId);
-      $data.val(JSON.stringify(ranges));
-    });
+    // Mount the Vue app to the app container
+    vueApp.mount('#' + ComponentsMap.carrierRanges.rangesCostsAppContainerId);
   }
 }

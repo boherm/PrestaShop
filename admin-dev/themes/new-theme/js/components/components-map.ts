@@ -148,5 +148,10 @@ export default {
   },
   carrierRanges: {
     addRangeButton: '.js-add-carrier-ranges-btn',
+    rangesSelectionDataId: 'carrier_shipping_settings_ranges_data',
+    rangesSelectionAppId: 'carrier_shipping_settings_ranges-app',
+    rangesCostsDataId: 'carrier_shipping_settings_ranges_costs_data',
+    rangesCostsMainContainerId: 'carrier_shipping_settings_ranges_costs',
+    rangesCostsAppContainerId: 'carrier_shipping_settings_ranges_costs-app',
   },
 };

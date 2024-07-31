@@ -35,7 +35,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 class TaxGroupChoiceType extends AbstractType
 {
     public function __construct(
-        private readonly FormChoiceProviderInterface $taxGroupChoiceProvider
+        private readonly FormChoiceProviderInterface $taxGroupChoiceProvider,
     ) {
     }
 
@@ -54,7 +54,6 @@ class TaxGroupChoiceType extends AbstractType
         $resolver->setDefaults([
             'active' => false,
             'active_first' => false,
-            'placeholder' => '--',
         ]);
     }
 

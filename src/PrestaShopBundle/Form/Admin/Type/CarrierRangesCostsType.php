@@ -28,53 +28,35 @@ declare(strict_types=1);
 
 namespace PrestaShopBundle\Form\Admin\Type;
 
+use PrestaShop\PrestaShop\Core\Currency\CurrencyDataProviderInterface;
+use PrestaShop\PrestaShop\Core\Form\ConfigurableFormChoiceProviderInterface;
 use PrestaShopBundle\Translation\TranslatorInterface;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * CarrierRangesType is a form type used to create Carrier ranges fo form.
+ * CarrierRangesCostsType is a form type used to set prices by Carrier ranges fo form.
  *
  * $builder
- *     ->add('ranges', CarrierRangesType::class, [
- *         'label' => 'Ranges',
- *     ])
+ *     ->add('ranges', CarrierRangesCostsType::class)
  * ;
  */
-class CarrierRangesType extends TranslatorAwareType
+class CarrierRangesCostsType extends TranslatorAwareType
 {
     public function __construct(
         TranslatorInterface $translator,
         array $locales,
+        private readonly ConfigurableFormChoiceProviderInterface $zonesChoiceProvider,
+        private readonly CurrencyDataProviderInterface $currencyDataProvider
     ) {
         parent::__construct($translator, $locales);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
             ->add('data', HiddenType::class)
-            ->add('show_modal', IconButtonType::class, [
-                'label' => ' ' . $options['button_label'],
-                'icon' => 'add_box',
-                'attr' => [
-                    'class' => 'js-add-carrier-ranges-btn btn btn-outline-primary',
-                    'data-translations' => json_encode([
-                        'modal.title' => $this->trans('Ranges', 'Admin.Shipping.Feature'),
-                        'modal.addRange' => $this->trans('Add range', 'Admin.Shipping.Feature'),
-                        'modal.apply' => $this->trans('Apply', 'Admin.Actions'),
-                        'modal.cancel' => $this->trans('Cancel', 'Admin.Actions'),
-                        'modal.col.from' => $this->trans('Minimum', 'Admin.Shipping.Feature'),
-                        'modal.col.to' => $this->trans('Maximum', 'Admin.Shipping.Feature'),
-                        'modal.col.action' => $this->trans('Action', 'Admin.Shipping.Feature'),
-                        'modal.overlappingAlert' => $this->trans('Make sure there are no overlapping ranges. Remember, the minimum is part of the range, but the maximum isn\'t. So, the upper limit of a range is the lower limit of the next range.', 'Admin.Shipping.Feature'),
-                    ]),
-                ],
-            ])
         ;
     }
 
@@ -84,8 +66,16 @@ class CarrierRangesType extends TranslatorAwareType
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults([
-            'label' => $this->trans('Ranges', 'Admin.Shipping.Feature'),
-            'button_label' => $this->trans('Add range', 'Admin.Shipping.Feature'),
+            'label' => false,
+            'attr' => [
+                'data-zones' => json_encode($this->getZonesData()),
+                'data-currency' => $this->currencyDataProvider->getDefaultCurrencySymbol(),
+                'data-translations' => json_encode([
+                    'action.deleteZone' => $this->trans('Delete Zone', 'Admin.Shipping.Feature'),
+                    'label' => $this->trans('Shipping Costs', 'Admin.Shipping.Feature'),
+                    'price.label' => $this->trans('Price (VAT excl.)', 'Admin.Shipping.Feature'),
+                ]),
+            ],
         ]);
     }
 
@@ -94,6 +84,11 @@ class CarrierRangesType extends TranslatorAwareType
      */
     public function getBlockPrefix()
     {
-        return 'carrier_ranges';
+        return 'carrier_ranges_costs';
+    }
+
+    private function getZonesData(): array
+    {
+        return array_flip($this->zonesChoiceProvider->getChoices([]));
     }
 }
